@@ -15,9 +15,9 @@ verify_write() {
 erase_boot0() {
     sudo sh -c 'echo 0 > /sys/block/mmcblk0boot0/force_ro'
     echo "Erasing boot0..."
-    sudo dd if=/dev/zero of=/dev/mmcblk0boot0 bs=512 count=8192 status=progress
+    sudo dd if=/dev/zero of=/dev/mmcblk0boot0 bs=1M count=4 status=progress
     echo "Verifying erase..."
-    sudo dd if=/dev/mmcblk0boot0 of=boot0_verify_zero.bin bs=512 count=8192 status=progress
+    sudo dd if=/dev/mmcblk0boot0 of=boot0_verify_zero.bin bs=1M count=4 status=progress
     #/tmp/1048576 
     if [ "$(head -c 4194304 /dev/zero | cmp -s - boot0_verify_zero.bin; echo $?)" -eq 0 ]; then
         echo "Erase completed"
@@ -30,10 +30,10 @@ erase_boot0() {
 write_boot0() {
     sudo sh -c 'echo 0 > /sys/block/mmcblk0boot0/force_ro'
     echo "Writing U-Boot to boot0..."
-    sudo dd if="$UBOOT_FILE" of=/dev/mmcblk0boot0 bs=512 count=8192  status=progress
+    sudo dd if="$UBOOT_FILE" of=/dev/mmcblk0boot0 bs=1M count=4  status=progress
     sleep 2
     echo "Readback U-Boot to verify..."
-    sudo dd if=/dev/mmcblk0boot0 of=boot0_verify_write.bin bs=512 count=8192 status=progress
+    sudo dd if=/dev/mmcblk0boot0 of=boot0_verify_write.bin bs=1M count=4 status=progress
     
     if verify_write "$UBOOT_FILE" boot0_verify_write.bin; then
         echo "Write verification successful."
@@ -45,7 +45,7 @@ write_boot0() {
 
 dump_boot0() {
     echo "Dumping boot0 to mmcblk0boot0.bin..."
-    sudo dd if=/dev/mmcblk0boot0 of=mmcblk0boot0.bin bs=512 count=8192 status=progress
+    sudo dd if=/dev/mmcblk0boot0 of=mmcblk0boot0.bin bs=1M count=4 status=progress
     echo "Dump saved as mmcblk0boot0.bin."
 }
 
@@ -55,7 +55,6 @@ while getopts "fwed" opt; do
             sudo mmc bootpart enable 1 0 /dev/mmcblk0
             sudo sh -c 'echo 0 > /sys/block/mmcblk0boot0/force_ro'
             echo "File to write: $UBOOT_FILE"
-            echo "Erasing boot0..."
             sleep 1
             erase_boot0
             sleep 1
@@ -93,7 +92,7 @@ done
 # Заборонити запис після завершення
 #sudo sh -c 'echo 1 > /sys/block/mmcblk0boot0/force_ro'
 
-
+#sudo cat /sys/kernel/debug/mmc0/ios
 
 
 #sudo mmc extcsd read /dev/mmcblk0 | grep PARTITION_CONFIG
@@ -102,4 +101,9 @@ done
 #sudo mmc bootpart enable 1 1 /dev/mmcblk0
 #sudo sh -c 'echo 0 > /sys/block/mmcblk0boot0/force_ro'
 
+#sudo dd if=boot0_1.img of=/dev/mmcblk0boot0 bs=1M status=progress
 #sudo dd if=/dev/zero of=/dev/mmcblk0boot0 bs=1M status=progress
+
+#sudo nano /etc/systemd/system/emmcWriter.service
+#sudo systemctl daemon-reload
+#sudo systemctl restart emmcWriter.service

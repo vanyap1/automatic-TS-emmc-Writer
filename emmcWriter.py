@@ -115,7 +115,7 @@ class Main:
         self.gpio.setPinDirection(self.jigSw, False)
         self.gpio.setPinDirection(self.busyLED, True)
         self.gpio.setPinDirection(self.okLED, False)
-        self.gpio.setPinDirection(self.errLED, False)
+        self.gpio.setPinDirection(self.errLED, True)
         self.gpio.setPinDirection(self.emmcChRel, True)
 
         self.gpio.startController()
@@ -148,10 +148,7 @@ class Main:
                 return "complete"
             else:
                 return "error"
-        elif(reguest[0] == "writeboot"):
-            self.slotStatus = SlotStatus.writeBoot
-            res = self.bootImageHandle("write")
-            return res
+    
         elif(reguest[0] == "jigsw"):
             if self.getJigSwithState():
                 return "1"  
@@ -165,8 +162,28 @@ class Main:
                 return "0"
         
         elif(reguest[0] == "readboot"):
+            StatusLED.RED.set_value(True)
+            self.gpio.pinWrite(self.busyLED, True)
             self.slotStatus = SlotStatus.writeBoot
             res = self.bootImageHandle("read")
+            self.gpio.pinWrite(self.busyLED, False)
+            StatusLED.RED.set_value(False)
+            return res
+        elif(reguest[0] == "eraseboot"):
+            self.gpio.pinWrite(self.busyLED, True)
+            StatusLED.RED.set_value(True)
+            self.slotStatus = SlotStatus.writeBoot
+            res = self.bootImageHandle("erase")
+            self.gpio.pinWrite(self.busyLED, False)
+            StatusLED.RED.set_value(False)
+            return res
+        elif(reguest[0] == "writeboot"):
+            StatusLED.RED.set_value(True)
+            self.gpio.pinWrite(self.busyLED, True)
+            self.slotStatus = SlotStatus.writeBoot
+            res = self.bootImageHandle("write")
+            self.gpio.pinWrite(self.busyLED, False)
+            StatusLED.RED.set_value(False)
             return res
         elif reguest[0].startswith("led="):
             match = re.match(r"led=([0-7])$", reguest[0])
@@ -184,7 +201,7 @@ class Main:
             else:
                 return "err: Invalid IP address (Ip must be in range 192.168.1.100-200)"
         
-        return "ok"
+        return "err: unknown command"
 
 
     def isEmmcIncerted(self):                                                   #Check eMMC card detection line
@@ -241,10 +258,17 @@ class Main:
     def bootImageHandle(self, opcode):
         if opcode == "write":
             if os.path.exists("/dev/mmcblk0"):
-                result = subprocess.run(["./emmcPrepare.sh", "-f"], capture_output=True, text=True)
+                result = subprocess.run(["./emmcPrepare.sh", "-w"], capture_output=True, text=True)
                 return result.stdout
             else:
                 return "Device /dev/mmcblk0 not found"
+        elif opcode == "erase":
+            if os.path.exists("/dev/mmcblk0"):
+                result = subprocess.run(["./emmcPrepare.sh", "-e"], capture_output=True, text=True)
+                return result.stdout
+            else:
+                return "Device /dev/mmcblk0 not found"
+            
         elif opcode == "read":
             if os.path.exists("/dev/mmcblk0"):
                 result = subprocess.run(["./emmcPrepare.sh", "-d"], capture_output=True, text=True)

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Paths to Device Tree Source (DTS) and Device Tree Blob (DTB) files
-DTS_FILE=/home/pi/sun8i-h3-nanopi-neo.dts
+DTS_FILE=/home/pi/automatic-TS-emmc-Writer/sun8i-h3-nanopi-neo.dts
 DTB_FILE=/boot/dtb/sun8i-h3-nanopi-neo.dtb
 
 # Check if arguments are provided
