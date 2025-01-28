@@ -1,20 +1,11 @@
-#       Emmc writer service 
-#   sudo nano /etc/systemd/system/emmcWriter.service
-#   sudo systemctl daemon-reload
-#   sudo systemctl enable emmcWriter.service
-#   sudo systemctl start emmcWriter.service
-#   sudo systemctl status emmcWriter.service
-#
-#
-
 [Unit]
 Description=eMMC Writer Service
 After=network.target
 
 [Service]
 User=pi
-WorkingDirectory=/home/pi/emmcWriter
-ExecStart=/usr/bin/python3 /home/pi/emmcWriter/emmcWriter.py
+WorkingDirectory=/home/pi/automatic-TS-emmc-Writer
+ExecStart=/usr/bin/python3 /home/pi/automatic-TS-emmc-Writer/emmcWriter.py
 Restart=always
 
 [Install]
