@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#UBOOT_FILE="/home/pi/emmcWriter/u-boot-nxs-0.1.bin"
-UBOOT_FILE="/home/pi/emmcWriter/mmcblk0boot0.bin"
+#UBOOT_FILE="/home/pi/automatic-TS-emmc-Writer/u-boot-nxs-0.1.bin"
+UBOOT_FILE="/home/pi/automatic-TS-emmc-Writer/mmcblk0boot0.bin"
 
 
 verify_write() {
