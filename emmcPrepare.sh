@@ -29,7 +29,7 @@ erase_boot0() {
 
 write_boot0() {
     sudo sh -c 'echo 0 > /sys/block/mmcblk0boot0/force_ro'
-    echo "Writing U-Boot to boot0..."
+    echo "Writing U-Boot to boot0...$UBOOT_FILE"
     sudo dd if="$UBOOT_FILE" of=/dev/mmcblk0boot0 bs=1M count=4  status=progress
     sleep 2
     echo "Readback U-Boot to verify..."
@@ -45,33 +45,33 @@ write_boot0() {
 
 dump_boot0() {
     echo "Dumping boot0 to mmcblk0boot0.bin..."
-    sudo dd if=/dev/mmcblk0boot0 of=mmcblk0boot0.bin bs=1M count=4 status=progress
+    sudo dd if=/dev/mmcblk0boot0 of="$UBOOT_FILE" bs=1M count=4 status=progress
     echo "Dump saved as mmcblk0boot0.bin."
 }
 
 while getopts "fwed" opt; do
     case $opt in
         f)
-            sudo mmc bootpart enable 1 0 /dev/mmcblk0
+            #sudo mmc bootpart enable 1 0 /dev/mmcblk0
             sudo sh -c 'echo 0 > /sys/block/mmcblk0boot0/force_ro'
             echo "File to write: $UBOOT_FILE"
-            sleep 1
+            #sleep 1
             erase_boot0
-            sleep 1
+            #sleep 1
             write_boot0
             ;;
         e)
             
-            sudo mmc bootpart enable 1 0 /dev/mmcblk0
+            #sudo mmc bootpart enable 1 0 /dev/mmcblk0
             sudo sh -c 'echo 0 > /sys/block/mmcblk0boot0/force_ro'
-            sleep 1
+            #sleep 1
             erase_boot0
             ;;
         w)
             # Запис
-            sudo mmc bootpart enable 1 0 /dev/mmcblk0
+            #sudo mmc bootpart enable 1 0 /dev/mmcblk0
             sudo sh -c 'echo 0 > /sys/block/mmcblk0boot0/force_ro'
-            sleep 1
+            #sleep 1
             write_boot0
             ;;
         d)

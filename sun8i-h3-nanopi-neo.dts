@@ -278,7 +278,7 @@
 			resets = <0x03 0x07>;
 			reset-names = "ahb";
 			interrupts = <0x00 0x3c 0x04>;
-			bus-width = <0x01>;
+			bus-width = <0x04>;
 			status = "okay";
 			#address-cells = <0x01>;
 			#size-cells = <0x00>;
@@ -288,7 +288,7 @@
 			cd-gpios = <0x15 0x05 0x06 0x01>;
 			vmmc-supply = <0x16>;
 			phandle = <0x50>;
-			max-frequency = <0x7a1200>;
+			#max-frequency = <0x7a1200>;
 		};
 
 		mmc@1c10000 {
