@@ -37,7 +37,7 @@
                     sendCommand(commandText);
                     return;
                 }
-            }else if (commandText === 'setip'  || commandText === 'led') {
+            }else if (commandText === 'setip'  || commandText === 'led' || commandText === 'id') {
                 if (command) {
                     sendCommand(commandText + '=' + command);
                     return;
@@ -69,10 +69,8 @@
                 <option value="slot2">slot2</option>
             </select>
             <select id="commandDropdown">
-                <option value="status">status</option>
+                <option value="id">id beacon</option>
                 <option value="cmd">cmd</option>
-                <option value="run">run</option>
-                <option value="stop">stop</option>
                 <option value="crpi">connRPI</option>
                 <option value="copi">connOPI</option>
                 <option value="rst">reset connection</option>
