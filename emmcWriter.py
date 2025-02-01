@@ -412,6 +412,16 @@ class Main:
 
                 time.sleep(0.5)
         finally:
+            self.gpio.pinWrite(self.busyLED, False)
+            self.gpio.pinWrite(self.okLED, False)
+            self.gpio.pinWrite(self.errLED, False)
+            self.gpio.pinWrite(self.emmcChRel, False)
+            self.gpio.pinWrite(self.emmcCD, False)
+            self.gpio.pinWrite(self.muxCtrl, False)
+            time.sleep(0.3)
+            self.gpio.stopController()
+            self.udpClient.stopListener()
+            self.server.shutdown()
             self.emmcConnInitConnection("rst")
             StatusLED.GRN.set_value(False)
             StatusLED.RED.set_value(False)
