@@ -16,7 +16,7 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
             self.path = '/index.html'
     
         file_path = os.path.join('remoteCtrlServer/html', self.path[1:])  # Remove leading '/' from path and prepend 'html/'
-        print(file_path)
+        #print(file_path)
         if self.client_instance:
             if self.path.startswith('/cmd:'):
                 command = self.path[len('/cmd:'):]

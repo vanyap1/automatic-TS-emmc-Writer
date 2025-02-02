@@ -37,7 +37,7 @@
                     sendCommand(commandText);
                     return;
                 }
-            }else if (commandText === 'setip'  || commandText === 'led' || commandText === 'id') {
+            } else if (commandText === 'setip' || commandText === 'led' || commandText === 'id' || commandText === 'readboot' || commandText === 'eraseboot' || commandText === 'writeboot' || commandText === 'optionset' || commandText === 'filecheck' || commandText === 'mmcbootoptset') {
                 if (command) {
                     sendCommand(commandText + '=' + command);
                     return;
@@ -51,9 +51,31 @@
                 return;
             }
         }
+
         function onButtonClick(buttonId) {
-            //sendCommand(buttonId + '=pressed');
+            document.getElementById('commandDropdown').value = buttonId;
+            updateCommandExample();
             sendCommand(buttonId);
+        }
+
+        function updateCommandExample() {
+            const command = document.getElementById('commandInput').value;
+            const commandText = document.getElementById('commandDropdown').value;
+            const slotName = document.getElementById('slotsDropdown').value;
+            let example = '/cmd:';
+            if (slotName) {
+                example += slotName + '/';
+            }
+            if (commandText === 'cmd' || commandText === 'setip' || commandText === 'led' || commandText === 'id' || commandText === 'readboot' || commandText === 'eraseboot' || commandText === 'writeboot' || commandText === 'optionset' || commandText === 'filecheck' || commandText === 'mmcbootoptset') {
+                if (command) {
+                    example += commandText + '=' + command;
+                } else {
+                    example += commandText;
+                }
+            } else {
+                example += commandText;
+            }
+            document.getElementById('commandExample').innerText = example;
         }
     </script>
 </head>
@@ -62,33 +84,43 @@
     <div class="container">
         <h1>Command interface</h1>
         <div class="input-group">
-            
-            <select id="slotsDropdown">
+            <select id="slotsDropdown" onchange="updateCommandExample()">
                 <option value="">none</option>
                 <option value="slot1">slot1</option>
                 <option value="slot2">slot2</option>
             </select>
-            <select id="commandDropdown">
+            <select id="commandDropdown" onchange="updateCommandExample()">
                 <option value="id">id beacon</option>
                 <option value="cmd">cmd</option>
                 <option value="crpi">connRPI</option>
                 <option value="copi">connOPI</option>
+                <option value="mmcifcheck">check mmc interface</option>
                 <option value="rst">reset connection</option>
+                <option value="readboot">Read BOOT0</option>
+                <option value="eraseboot">Erase BOOT0</option>
+                <option value="writeboot">Write BOOT0</option>
+                <option value="filecheck">Check file</option>
+                <option value="binlist">boot dump list</option>
+                <option value="mmcbootoptset">EXT PART OPTION Set</option>
+                <option value="mmcbootoptget">EXT PART OPTION Get</option>
                 <option value="setip">Set new IP</option>
                 <option value="jigsw">Jig switch</option>
                 <option value="emmcins">Emmc detect</option>
                 <option value="led">set led state</option>
-                
             </select>
-            <input type="text" id="commandInput" placeholder="Введіть команду">
+            <input type="text" id="commandInput" placeholder="Type your command" oninput="updateCommandExample()">
             <button onclick="onOkButtonClick()">EXEC</button>
         </div>
 
-
+        <div class="result-group">
+            <h2>Command example:</h2>
+            <pre id="commandExample">/cmd:</pre>
+        </div>
         <div class="result-group">
             <h2>Result:</h2>
             <pre id="result">No data</pre>
         </div>
+        
         <div class="button-group">
             <button onclick="onButtonClick('copi')">OPI</button>
             <button onclick="onButtonClick('crpi')">USB</button>
@@ -99,7 +131,7 @@
             <button onclick="onButtonClick('eraseboot')">erase boot0</button>
             <button onclick="onButtonClick('writeboot')">write boot0</button>
             <button onclick="onButtonClick('status')">Status</button>
-        </div>    
+        </div>
     </div>
 </body>
 

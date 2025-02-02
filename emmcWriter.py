@@ -199,12 +199,74 @@ class Main:
                 return "not inserted"
         elif(reguest[0] == "status"):
             return self.slotStatus
+        elif(reguest[0] == "mmcifcheck"):
+            try:
+                result = subprocess.run(["sudo", "cat", "/sys/kernel/debug/mmc0/ios"], capture_output=True, text=True)
+                return result.stdout
+            except subprocess.CalledProcessError as e:
+                return "Device mmc0 not found"
         
-        elif(reguest[0] == "readboot"):
+        elif(reguest[0] == "mmcbootoptget"):
+            #sudo mmc extcsd read /dev/mmcblk0 | grep PARTITION_CONFIG
+            try:
+                result = subprocess.run("sudo mmc extcsd read /dev/mmcblk0 | grep PARTITION_CONFIG", shell=True, capture_output=True, text=True)
+                if result.stdout:
+                    return result.stdout
+                else:
+                    return "No output"
+            except subprocess.CalledProcessError as e:
+                return "Device mmc0 not found"
+        elif reguest[0] == "binlist":
+            try:
+                result = subprocess.run("ls *.bin", shell=True, capture_output=True, text=True)
+                if result.stdout:
+                    return result.stdout
+                else:
+                    return "No output"
+            except subprocess.CalledProcessError as e:
+                return "err: shell error"
+        
+        elif reguest[0] == "mmcbootoptset":
+            return "err: missing value"    
+        elif reguest[0].startswith("mmcbootoptset="):
+            arg = reguest[0].split("=")
+            '''
+            first value
+                0 - disable boot partition
+                1 - enable boot partition 1
+                2 - enable boot partition 2
+            second value
+                0 - disable access to boot partition
+                1 - enable read access to boot partition
+                2 - enable write access to boot partition
+
+            Example:
+                sudo mmc bootpart enable 1 1 /dev/mmcblk0
+                This command enables boot partition 1 and allows read access to it.
+            '''
+            if len(arg) > 1:
+                value = arg[1]
+                if len(value) != 2 or value[0] not in "012" or value[1] not in "012":
+                    return "Invalid format. The format should be two digits, each between 0 and 2."
+            try:
+                result = subprocess.run(["sudo", "mmc", "bootpart", "enable", value[0], value[1], "/dev/mmcblk0"], capture_output=True, text=True)
+                if result.returncode == 0:
+                    return f"Register set to {value}"
+                else:
+                    return f"Failed to set register: {result.stderr}"
+            except subprocess.CalledProcessError as e:
+                return f"Error: {e}"
+
+        elif(reguest[0] == "readboot" or reguest[0].startswith("readboot=")):
+            
+            arg = reguest[0].split("=")
+            filename = arg[1] if len(arg) > 1 else "mmcblk0boot0.bin"
+            if not filename.endswith(".bin"):
+                return "Invalid file extension. Only .bin files are allowed."
             StatusLED.RED.set_value(True)
             self.gpio.pinWrite(self.busyLED, True)
             self.slotStatus = SlotStatus.writeBoot
-            res = self.bootImageHandle("read")
+            res = self.bootImageHandle("read", filename)
             self.gpio.pinWrite(self.busyLED, False)
             StatusLED.RED.set_value(False)
             return res
@@ -216,14 +278,25 @@ class Main:
             self.gpio.pinWrite(self.busyLED, False)
             StatusLED.RED.set_value(False)
             return res
-        elif(reguest[0] == "writeboot"):
+        elif(reguest[0] == "writeboot" or reguest[0].startswith("writeboot=")):
+            arg = reguest[0].split("=")
+            filename = arg[1] if len(arg) > 1 else "mmcblk0boot0.bin"
+            if not filename.endswith(".bin"):
+                return "Invalid file extension. Only .bin files are allowed."
             StatusLED.RED.set_value(True)
             self.gpio.pinWrite(self.busyLED, True)
             self.slotStatus = SlotStatus.writeBoot
-            res = self.bootImageHandle("write")
+            res = self.bootImageHandle("write",  filename)
             self.gpio.pinWrite(self.busyLED, False)
             StatusLED.RED.set_value(False)
             return res
+        elif(reguest[0] == "filecheck" or reguest[0].startswith("filecheck=")):
+            arg = reguest[0].split("=")
+            filename = arg[1] if len(arg) > 1 else "mmcblk0boot0.bin"
+            if os.path.exists(filename):
+                return f"File {filename} found"
+            return "err: File not found"
+        
         elif reguest[0].startswith("led="):
             match = re.match(r"led=([0-7])$", reguest[0])
             if match:
@@ -305,23 +378,25 @@ class Main:
         else:
             return False
 
-    def bootImageHandle(self, opcode):
+    def bootImageHandle(self, opcode, filename="mmcblk0boot0.bin"):
         if opcode == "write":
             if os.path.exists("/dev/mmcblk0"):
-                result = subprocess.run(["./emmcPrepare.sh", "-w"], capture_output=True, text=True)
+                if not os.path.exists(filename):
+                    return f"File {filename} not found"
+                result = subprocess.run(["./emmcPrepare.sh", "-w",  filename], capture_output=True, text=True)
                 return result.stdout
             else:
                 return "Device /dev/mmcblk0 not found"
         elif opcode == "erase":
             if os.path.exists("/dev/mmcblk0"):
-                result = subprocess.run(["./emmcPrepare.sh", "-e"], capture_output=True, text=True)
+                result = subprocess.run(["./emmcPrepare.sh", "-e" ], capture_output=True, text=True)
                 return result.stdout
             else:
                 return "Device /dev/mmcblk0 not found"
             
         elif opcode == "read":
             if os.path.exists("/dev/mmcblk0"):
-                result = subprocess.run(["./emmcPrepare.sh", "-d"], capture_output=True, text=True)
+                result = subprocess.run(["./emmcPrepare.sh", "-d", filename], capture_output=True, text=True)
                 return result.stdout
             else:
                 return "Device /dev/mmcblk0 not found"
@@ -407,10 +482,8 @@ class Main:
                 if self.beacon > 0:
                     self.gpio.pinWrite(self.busyLED, self.beacon % 2 == 0)
                     self.beacon -= 1
-                     
-
-
                 time.sleep(0.5)
+        
         finally:
             self.gpio.pinWrite(self.busyLED, False)
             self.gpio.pinWrite(self.okLED, False)
@@ -425,8 +498,10 @@ class Main:
             self.emmcConnInitConnection("rst")
             StatusLED.GRN.set_value(False)
             StatusLED.RED.set_value(False)
+            SDCtrld.CD.set_value(True)
             StatusLED.GRN.release()
             StatusLED.RED.release()
+            SDCtrld.CD.release()
 
 
 if __name__ == '__main__':
