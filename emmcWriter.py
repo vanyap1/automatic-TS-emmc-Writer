@@ -9,6 +9,7 @@ import json
 from PyIODriver.i2c_gpio import  I2CGPIOController, IO, DIR, Expander
 from remoteCtrlServer.httpserver import start_server_in_thread
 from remoteCtrlServer.udpService import UdpAsyncClient
+from uboot import UbootWorker
 
 
 i2cBus = 0
@@ -41,6 +42,8 @@ class SlotStatus:
     reset = "rst"
     writeBoot = "writeboot"
     readBoot = "readboot"
+    verifyBoot = "verifyboot"
+    eraseBoot = "eraseboot"
     passed = "passed"
     failed = "failed"
     idle = "idle"
@@ -60,6 +63,7 @@ SDCtrld.CD.set_value(True)
 
 class Main:
     def __init__(self):
+        self.uboot = UbootWorker()
         self.expanderAddress = 0x20
         self.slotNum = 0
         self.slotStatus = SlotStatus.idle
@@ -200,22 +204,27 @@ class Main:
         elif(reguest[0] == "status"):
             return self.slotStatus
         elif(reguest[0] == "mmcifcheck"):
-            try:
-                result = subprocess.run(["sudo", "cat", "/sys/kernel/debug/mmc0/ios"], capture_output=True, text=True)
-                return result.stdout
-            except subprocess.CalledProcessError as e:
-                return "Device mmc0 not found"
+            return self.uboot.mmcIfCurrentState()
         
-        elif(reguest[0] == "mmcbootoptget"):
-            #sudo mmc extcsd read /dev/mmcblk0 | grep PARTITION_CONFIG
+        elif(reguest[0] == "dtbsetmaxfreq"):
+            return "err: missing value"
+        
+        elif reguest[0].startswith("dtbsetmaxfreq="):
+            arg = reguest[0].split("=")
             try:
-                result = subprocess.run("sudo mmc extcsd read /dev/mmcblk0 | grep PARTITION_CONFIG", shell=True, capture_output=True, text=True)
-                if result.stdout:
-                    return result.stdout
-                else:
-                    return "No output"
-            except subprocess.CalledProcessError as e:
-                return "Device mmc0 not found"
+                freq = int(arg[1])
+            except ValueError:
+                return "err: invalid value"
+            return self.uboot.updateMaxFrequency("sun8i-h3-nanopi-neo.dts", freq, 1)
+        elif(reguest[0] == "restoredevblob"):
+            return self.uboot.DTS2DTB("sun8i-h3-nanopi-neo_original.dts")
+        
+        elif(reguest[0] == "compiledevblob"):
+            return self.uboot.DTS2DTB("sun8i-h3-nanopi-neo.dts")
+        
+        elif(reguest[0] == "decompiledevblob"):
+            return self.uboot.DTB2DTS("sun8i-h3-nanopi-neo.dts")
+        
         elif reguest[0] == "binlist":
             try:
                 result = subprocess.run("ls *.bin", shell=True, capture_output=True, text=True)
@@ -226,70 +235,75 @@ class Main:
             except subprocess.CalledProcessError as e:
                 return "err: shell error"
         
+        
         elif reguest[0] == "mmcbootoptset":
             return "err: missing value"    
+        
         elif reguest[0].startswith("mmcbootoptset="):
             arg = reguest[0].split("=")
-            '''
-            first value
-                0 - disable boot partition
-                1 - enable boot partition 1
-                2 - enable boot partition 2
-            second value
-                0 - disable access to boot partition
-                1 - enable read access to boot partition
-                2 - enable write access to boot partition
+            return self.uboot.setPartOptions("mmcblk0", arg[1])
+        
+        elif(reguest[0] == "mmcbootoptget"):
+            #sudo mmc extcsd read /dev/mmcblk0 | grep PARTITION_CONFIG
+            return self.uboot.getPartOptions("mmcblk0")
 
-            Example:
-                sudo mmc bootpart enable 1 1 /dev/mmcblk0
-                This command enables boot partition 1 and allows read access to it.
-            '''
-            if len(arg) > 1:
-                value = arg[1]
-                if len(value) != 2 or value[0] not in "012" or value[1] not in "012":
-                    return "Invalid format. The format should be two digits, each between 0 and 2."
-            try:
-                result = subprocess.run(["sudo", "mmc", "bootpart", "enable", value[0], value[1], "/dev/mmcblk0"], capture_output=True, text=True)
-                if result.returncode == 0:
-                    return f"Register set to {value}"
-                else:
-                    return f"Failed to set register: {result.stderr}"
-            except subprocess.CalledProcessError as e:
-                return f"Error: {e}"
+        elif(reguest[0] == "readboot" or 
+             reguest[0] == "writeboot" or
+             reguest[0] == "eraseboot" or
+             reguest[0] == "verifyboot"):
+            return "err: incorrect command format. correct - readboot=filename.bin/bootpart0"
 
-        elif(reguest[0] == "readboot" or reguest[0].startswith("readboot=")):
-            
-            arg = reguest[0].split("=")
-            filename = arg[1] if len(arg) > 1 else "mmcblk0boot0.bin"
-            if not filename.endswith(".bin"):
+        elif(reguest[0].startswith("readboot=") and len(reguest) >= 2):
+            self.gpio.pinWrite(self.busyLED, True)
+            self.slotStatus = SlotStatus.readBoot
+            targetDev = f"/dev/{reguest[0].split("=")[1]}"
+            targetFile = reguest[1]
+            if not targetFile.endswith(".bin"):
                 return "Invalid file extension. Only .bin files are allowed."
-            StatusLED.RED.set_value(True)
+            print(f"readboot targetDev: {targetDev}, targetFile: {targetFile}")
+            res = self.uboot.ubootRead(targetDev, targetFile)
+            self.gpio.pinWrite(self.busyLED, False)
+            self.slotStatus = SlotStatus.idle
+            return res
+        
+        elif(reguest[0].startswith("writeboot=") and len(reguest) >= 2):
             self.gpio.pinWrite(self.busyLED, True)
             self.slotStatus = SlotStatus.writeBoot
-            res = self.bootImageHandle("read", filename)
-            self.gpio.pinWrite(self.busyLED, False)
-            StatusLED.RED.set_value(False)
-            return res
-        elif(reguest[0] == "eraseboot"):
-            self.gpio.pinWrite(self.busyLED, True)
-            StatusLED.RED.set_value(True)
-            self.slotStatus = SlotStatus.writeBoot
-            res = self.bootImageHandle("erase")
-            self.gpio.pinWrite(self.busyLED, False)
-            StatusLED.RED.set_value(False)
-            return res
-        elif(reguest[0] == "writeboot" or reguest[0].startswith("writeboot=")):
-            arg = reguest[0].split("=")
-            filename = arg[1] if len(arg) > 1 else "mmcblk0boot0.bin"
-            if not filename.endswith(".bin"):
+            targetDev = f"/dev/{reguest[0].split("=")[1]}"
+            targetFile = reguest[1]
+            if not targetFile.endswith(".bin"):
                 return "Invalid file extension. Only .bin files are allowed."
-            StatusLED.RED.set_value(True)
-            self.gpio.pinWrite(self.busyLED, True)
-            self.slotStatus = SlotStatus.writeBoot
-            res = self.bootImageHandle("write",  filename)
+            print(f"writeboot targetDev: {targetDev}, targetFile: {targetFile}")
+            res = self.uboot.ubootWrite(targetDev, targetFile)
             self.gpio.pinWrite(self.busyLED, False)
-            StatusLED.RED.set_value(False)
+            self.slotStatus = SlotStatus.idle
             return res
+        
+        elif(reguest[0].startswith("verifyboot=") and len(reguest) >= 2):
+            self.gpio.pinWrite(self.busyLED, True)
+            self.slotStatus = SlotStatus.verifyBoot
+            targetDev = f"/dev/{reguest[0].split("=")[1]}"
+            targetFile = reguest[1]
+            if not targetFile.endswith(".bin"):
+                return "Invalid file extension. Only .bin files are allowed."
+            print(f"verifyboot targetDev: {targetDev}, targetFile: {targetFile}")
+            res = self.uboot.ubootVerify(targetDev, targetFile)
+            self.gpio.pinWrite(self.busyLED, False)
+            self.slotStatus = SlotStatus.idle
+            return res  
+        
+        elif(reguest[0].startswith("eraseboot=") and len(reguest) >= 1):
+            self.gpio.pinWrite(self.busyLED, True)
+            self.slotStatus = SlotStatus.eraseBoot
+            targetDev = f"/dev/{reguest[0].split("=")[1]}"
+            print(f"eraseboot targetDev: {targetDev}")
+            res = self.uboot.ubootErase(targetDev)
+            self.gpio.pinWrite(self.busyLED, False)
+            self.slotStatus = SlotStatus.idle        
+            return res
+        
+
+       
         elif(reguest[0] == "filecheck" or reguest[0].startswith("filecheck=")):
             arg = reguest[0].split("=")
             filename = arg[1] if len(arg) > 1 else "mmcblk0boot0.bin"
@@ -378,29 +392,6 @@ class Main:
         else:
             return False
 
-    def bootImageHandle(self, opcode, filename="mmcblk0boot0.bin"):
-        if opcode == "write":
-            if os.path.exists("/dev/mmcblk0"):
-                if not os.path.exists(filename):
-                    return f"File {filename} not found"
-                result = subprocess.run(["./emmcPrepare.sh", "-w",  filename], capture_output=True, text=True)
-                return result.stdout
-            else:
-                return "Device /dev/mmcblk0 not found"
-        elif opcode == "erase":
-            if os.path.exists("/dev/mmcblk0"):
-                result = subprocess.run(["./emmcPrepare.sh", "-e" ], capture_output=True, text=True)
-                return result.stdout
-            else:
-                return "Device /dev/mmcblk0 not found"
-            
-        elif opcode == "read":
-            if os.path.exists("/dev/mmcblk0"):
-                result = subprocess.run(["./emmcPrepare.sh", "-d", filename], capture_output=True, text=True)
-                return result.stdout
-            else:
-                return "Device /dev/mmcblk0 not found"
-        pass
         
 
     def setStatusdisplay(self, ledState: int):

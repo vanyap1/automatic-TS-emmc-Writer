@@ -1,0 +1,86 @@
+11-02-2025
+    DTB compiler - decompiler
+    MMC CLOCK frequency setup tool
+    New configurable boot part handler
+        Can setup EXT_PART config,
+        Read BOOT0, BOOT1
+        Write BOOT0, BOOT1
+        Erase BOOT0, BOOT1
+        Verifying BOOT0, BOOT1 compare with dump file
+    Removed previous working version
+
+    All features accessible from web interface
+
+Available Commands:
+
+1. **/cmd:crpi** - Connect eMMC to USB reader.
+   - Example: `/cmd:crpi`
+
+2. **/cmd:copi** - Connect eMMC to OPI Shield.
+   - Example: `/cmd:copi`
+
+3. **/cmd:id** - Set beacon value to 6.
+   - Example: `/cmd:id`
+
+4. **/cmd:id=<value>** - Set beacon value to the specified value (0 to 9).
+   - Example: `/cmd:id=5`
+
+5. **/cmd:rst** - Reset eMMC connection.
+   - Example: `/cmd:rst`
+
+6. **/cmd:jigsw** - Check Jig switch state.
+   - Example: `/cmd:jigsw`
+
+7. **/cmd:emmcins** - Check if eMMC is inserted.
+   - Example: `/cmd:emmcins`
+
+8. **/cmd:status** - Get current slot status.
+   - Example: `/cmd:status`
+
+9. **/cmd:mmcifcheck** - Check current MMC interface state.
+   - Example: `/cmd:mmcifcheck`
+
+10. **/cmd:dtbsetmaxfreq** - Set maximum frequency (value required).
+    - Example: `/cmd:dtbsetmaxfreq=25000000`
+
+11. **/cmd:restoredevblob** - Restore original Device Tree Blob (DTB) file.
+    - Example: `/cmd:restoredevblob`
+
+12. **/cmd:compiledevblob** - Compile Device Tree Blob (DTB) file.
+    - Example: `/cmd:compiledevblob`
+
+13. **/cmd:decompiledevblob** - Decompile Device Tree Blob (DTB) file.
+    - Example: `/cmd:decompiledevblob`
+
+14. **/cmd:binlist** - Get list of files with `.bin` extension.
+    - Example: `/cmd:binlist`
+
+15. **/cmd:mmcbootoptset=<value>** - Set MMC boot options.
+    - Example: `/cmd:mmcbootoptset=11`
+
+16. **/cmd:mmcbootoptget** - Get current MMC boot options.
+    - Example: `/cmd:mmcbootoptget`
+
+17. **/cmd:readboot=<device>=<filename>** - Read eMMC boot partition to file.
+    - Example: `/cmd:readboot=mmcblk0boot0=boot0.bin`
+
+18. **/cmd:writeboot=<device>=<filename>** - Write file to eMMC boot partition.
+    - Example: `/cmd:writeboot=mmcblk0boot0/boot0.bin`
+
+19. **/cmd:verifyboot=<device>=<filename>** - Verify file with eMMC boot partition.
+    - Example: `/cmd:verifyboot=mmcblk0boot0/boot0.bin`
+
+20. **/cmd:eraseboot=<device>** - Erase eMMC boot partition.
+    - Example: `/cmd:eraseboot=mmcblk0boot0`
+
+21. **/cmd:filecheck=<filename>** - Check if file exists.
+    - Example: `/cmd:filecheck=boot0.bin`
+
+22. **/cmd:led=<value>** - Set LED status (value between 0 and 7).
+    - Example: `/cmd:led=3`
+
+23. **/cmd:setip=<ip_address>** - Set new IP address.
+    - Example: `/cmd:setip=192.168.1.150`
+
+
+

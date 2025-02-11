@@ -288,7 +288,7 @@
 			cd-gpios = <0x15 0x05 0x06 0x01>;
 			vmmc-supply = <0x16>;
 			phandle = <0x50>;
-			max-frequency = <0x7a1200>;
+			max-frequency = <0xf42400>;
 		};
 
 		mmc@1c10000 {
