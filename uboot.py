@@ -5,7 +5,8 @@ import re
 class UbootWorker:
 
     def ubootRead(self, targetDev, filename):
-        tmpFile = "tmpFile.bin"
+        filename = f"images/{filename}"
+        tmpFile = "images/tmpFile.bin"
         if not os.path.exists(targetDev):
                 return f"Target dev {targetDev} not found"
         if os.path.exists(tmpFile):
@@ -30,6 +31,7 @@ class UbootWorker:
 
 
     def ubootWrite(self, targetDev, filename):
+        filename = f"images/{filename}"
         if not os.path.exists(filename):
                 return f"File {filename} found"
         if not os.path.exists(targetDev):
@@ -48,7 +50,8 @@ class UbootWorker:
         
     
     def ubootVerify(self, targetDev, filename):
-        tmpFile = "tmpFile.bin"
+        filename = f"images/{filename}"
+        tmpFile = "images/tmpFile.bin"
         if os.path.exists(tmpFile):
             print (f"File {tmpFile} found")
             os.remove(tmpFile)

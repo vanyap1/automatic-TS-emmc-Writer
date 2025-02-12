@@ -5,6 +5,8 @@ import time
 import re
 import gpiod
 import json
+import glob
+
 
 from PyIODriver.i2c_gpio import  I2CGPIOController, IO, DIR, Expander
 from remoteCtrlServer.httpserver import start_server_in_thread
@@ -60,6 +62,18 @@ StatusLED.RED.request(consumer=deviceDescriptor, type=gpiod.LINE_REQ_DIR_OUT)
 
 SDCtrld.CD.request(consumer=deviceDescriptor, type=gpiod.LINE_REQ_DIR_OUT)
 SDCtrld.CD.set_value(True)
+
+command = ["sudo", "mount", "-t", "tmpfs", "-o", "size=50M", "tmpfs", "images"]
+result = subprocess.run(command, capture_output=True, text=True)
+if result.returncode == 0:
+    print(f"tmpfs mounted: {result.stdout}")
+else:
+    print(f"tmpfs mount failed: {result.stderr}")
+
+for file in glob.glob("*.bin"):
+    print(f"removed - {file}")
+    os.remove(file)
+
 
 class Main:
     def __init__(self):
@@ -161,7 +175,7 @@ class Main:
 
     def remCtrlCB(self, arg):                                   #Remote control callback
         #['', 'slot', '0', 'status']
-        reguest = arg.lower().split("/")                        #Split request to array
+        reguest = arg.split("/")                        #Split request to array
         print("CB arg-", reguest )
         if(reguest[0] == "crpi" or reguest[0] == "copi"):
             if self.isEmmcIncerted():
@@ -227,15 +241,20 @@ class Main:
         
         elif reguest[0] == "binlist":
             try:
-                result = subprocess.run("ls *.bin", shell=True, capture_output=True, text=True)
+                result = subprocess.run("ls images/*.bin", shell=True, capture_output=True, text=True)
                 if result.stdout:
-                    return result.stdout
+
+                    return result.stdout#.replace("\n", ";")
                 else:
-                    return "No output"
+                    return "empty"
             except subprocess.CalledProcessError as e:
                 return "err: shell error"
         
-        
+        elif reguest[0] == "binclear":
+            for file in glob.glob("images/*.bin"):
+                print(f"removed - {file}")
+                os.remove(file)
+
         elif reguest[0] == "mmcbootoptset":
             return "err: missing value"    
         
@@ -307,7 +326,7 @@ class Main:
         elif(reguest[0] == "filecheck" or reguest[0].startswith("filecheck=")):
             arg = reguest[0].split("=")
             filename = arg[1] if len(arg) > 1 else "mmcblk0boot0.bin"
-            if os.path.exists(filename):
+            if os.path.exists("images/"+filename):
                 return f"File {filename} found"
             return "err: File not found"
         
