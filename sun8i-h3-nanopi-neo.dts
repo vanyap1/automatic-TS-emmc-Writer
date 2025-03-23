@@ -718,10 +718,16 @@
 			pinctrl-names = "default";
 			pinctrl-0 = <0x21>;
 			resets = <0x03 0x0f>;
-			status = "disabled";
+			status = "okay";
 			#address-cells = <0x01>;
 			#size-cells = <0x00>;
 			phandle = <0x6a>;
+
+			spidev@0 {
+				compatible = "rohm,dh2228fv";
+				reg = <0x00>;
+				spi-max-frequency = <0x2faf080>;
+			};
 		};
 
 		spi@1c69000 {

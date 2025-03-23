@@ -116,13 +116,12 @@ class Main:
 
         self.gpioExpander = Expander(Expander.PCA9535)
         self.gpioExpander.addr = self.expanderAddress
+
+
         self.runStateShield = IO(expander = self.gpioExpander, portNum = 0, pinNum = 6, pinDir=DIR.INPUT)
         self.passFailState = IO(expander = self.gpioExpander, portNum = 0, pinNum = 4, pinDir=DIR.INPUT)
-        
-        self.piShieldCmdRun = IO(expander = self.gpioExpander, portNum = 0, pinNum = 3, pinDir=DIR.OUTPUT)
-        self.piShieldCmdModifier = IO(expander = self.gpioExpander, portNum = 0, pinNum = 5, pinDir=DIR.OUTPUT)
-        
-        
+        self.piShieldCmdRun = IO(expander = self.gpioExpander, portNum = 0, pinNum = 3, pinDir=DIR.INPUT)
+        self.piShieldCmdModifier = IO(expander = self.gpioExpander, portNum = 0, pinNum = 5, pinDir=DIR.INPUT)
         self.p0 = IO(expander = self.gpioExpander, portNum = 0, pinNum = 0, pinDir=DIR.INPUT)
         self.p1 = IO(expander = self.gpioExpander, portNum = 0, pinNum = 1, pinDir=DIR.INPUT)
         self.p2 = IO(expander = self.gpioExpander, portNum = 0, pinNum = 2, pinDir=DIR.INPUT)

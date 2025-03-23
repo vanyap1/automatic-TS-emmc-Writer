@@ -53,11 +53,11 @@ gld.request(consumer=deviceDescriptor, type=gpiod.LINE_REQ_DIR_OUT)
 rld.request(consumer=deviceDescriptor, type=gpiod.LINE_REQ_DIR_OUT)
 
 
-cmdRun.request(consumer=deviceDescriptor, type=gpiod.LINE_REQ_DIR_IN)
-cmdModifier.request(consumer=deviceDescriptor, type=gpiod.LINE_REQ_DIR_IN)
+#cmdRun.request(consumer=deviceDescriptor, type=gpiod.LINE_REQ_DIR_IN)
+#cmdModifier.request(consumer=deviceDescriptor, type=gpiod.LINE_REQ_DIR_IN)
 
-statusOut.request(consumer=deviceDescriptor, type=gpiod.LINE_REQ_DIR_OUT)
-statusPassFail.request(consumer=deviceDescriptor, type=gpiod.LINE_REQ_DIR_OUT)
+#statusOut.request(consumer=deviceDescriptor, type=gpiod.LINE_REQ_DIR_OUT)
+#statusPassFail.request(consumer=deviceDescriptor, type=gpiod.LINE_REQ_DIR_OUT)
 
 procCmdTimeout = 10
 
